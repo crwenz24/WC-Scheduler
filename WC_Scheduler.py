@@ -276,7 +276,7 @@ def Main():
 
     for Shift in range(len(Shift_List)): 
         priority = 3 # priority scales from 1 to 3, with 3 being the least busy shifts and 1 the busiest
-        while (priority>1): # tries to reduce amount of workers in least busy and average shifts to Shift_Maximum
+        while (priority>1): # tries to reduce amount of workers in least busy and average shifts to Shift_Minimum
             for Shift in (range(len(Shift_List))):
                 if Shift_List[Shift].priority == priority:
                     ScheduleTrimmer(Shift_List,Shift,Choices_List[3],True,Choices_List[0],Choices_List[1],Choices_List[2])
@@ -291,6 +291,14 @@ def Main():
             print(worker.Name, " has less than their requested hours!")
             for TimeAvailable in worker.Times_Available: # runs through the availability of worker
                 if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                    for work_shift in Shift_List: # runs through all avaialable shifts
+                        if (len(work_shift.workerNames)< Min_Workers): # looks for shifts that do not have the minimum workers
+                            if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                work_shift.workerNames.append(worker) # adds worker to shift
+                                worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+
+            if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                for TimeAvailable in worker.Times_Available: # runs through the availability of worker
                     for work_shift in Shift_List: # runs through all avaialable shifts
                         if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
                             if (work_shift.priority == 3): # checks if shift is a busy shift
