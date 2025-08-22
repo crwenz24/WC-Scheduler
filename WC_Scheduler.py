@@ -357,7 +357,7 @@ def Main():
             Extra_Hours = worker.NumberOfShifts - worker.Hours_Wanted
             print(worker.Name, " has ", Extra_Hours, " more hours than requested!")
         if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker has less shifts than requested
-            Needed_Hours = worker.NumberOfShifts - worker.Hours_Wanted
+            Needed_Hours = worker.Hours_Wanted - worker.NumberOfShifts
             print(worker.Name, " has ", Needed_Hours, " hours less than requested!")
 
 
