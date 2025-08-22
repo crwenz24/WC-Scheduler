@@ -243,62 +243,9 @@ def ScheduleTrimmer(Shift_List,Shift,Max_Workers,CountUpper,Multiple_Shifts,Mix_
         Shift_List[Shift].workerNames.remove(CurrentLargestFieldWorker)
 
 
-def CreateOutputFile (Shift_List,ConsultantList):
-  OutFileName="Schedule.csv"
-  with open (OutFileName, "w", encoding='utf-8') as OutFile:
-    Columns = ["Time", "Workers", "Number Of Workers"]
-    writer = csv.DictWriter(OutFile, fieldnames=Columns)
-    writer.writeheader()
-    for Shift in Shift_List:
-        TempNameList=[]
-        for name in Shift.workerNames:
-            TempNameList.append(name.Name)
-        writer.writerow({"Time": Shift.hour, "Workers": TempNameList, "Number Of Workers": len(TempNameList)})
-    OutFile.close()
-
-# Main Function
-def Main():
-
-    # Program set up
-    ConsultantList = CreateConsultantList()
-    #for i in ConsultantList: # prints list of consultants and attached info
-        #print(i.Name, i.Year, i.Hours_Wanted)
-        #print(i.Field_Of_Study, i.Times_Available)
-    Shift_List, Choices_List = CreateShiftInfo()
-    #for i in Shift_List: # prints list of available shifts
-        #print(i.hour, i.priority)
-    #for i in Choices_List: # prints director's choices
-       # print(i)
-
-    # Scheduler Program
-    Max_Workers = Choices_List[4]
-    Min_Workers = Choices_List[3]
-    for worker in ConsultantList: #Workers get distributed to available work times
-        for TimeAvailable in worker.Times_Available: # runs through the availability of worker
-            for work_shift in Shift_List: # runs through all avaialable shifts
-                if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
-                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                        work_shift.workerNames.append(worker) # adds worker to shift
-                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
-
-    for Shift in (range(len(Shift_List))): #Tries to reduce shifts to under Shift_Maximum
-        ScheduleTrimmer(Shift_List,Shift,Choices_List[4],True,Choices_List[0],Choices_List[1],Choices_List[2])
-
-    for Shift in range(len(Shift_List)): 
-        priority = 3 # priority scales from 1 to 3, with 3 being the least busy shifts and 1 the busiest
-        while (priority>1): # tries to reduce amount of workers in least busy and average shifts to Shift_Minimum
-            for Shift in (range(len(Shift_List))):
-                if Shift_List[Shift].priority == priority:
-                    ScheduleTrimmer(Shift_List,Shift,Min_Workers,True,Choices_List[0],Choices_List[1],Choices_List[2])
-            priority-=1
-        while (priority==1): # tries to reduce amount of workers in busiest shifts to under Shift_Maximum
-            for Shift in range(len(Shift_List)): #Tries to reduce shifts to under Shift_Maximum
-                ScheduleTrimmer(Shift_List,Shift,Max_Workers,True,Choices_List[0],Choices_List[1],Choices_List[2])
-            priority-=1
-
-    count = 2
-    while count != 0:
-        for worker in ConsultantList:
+def Schedule_Checker (Consultant_List, Shift_List, Max_Workers, Min_Workers):
+        for worker in Consultant_List:
+            # Increasing worker's shifts
             if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker has less shifts than requested
                 #print(worker.Name, " has less than their requested hours!")
                 for TimeAvailable in worker.Times_Available: # runs through the availability of worker
@@ -331,6 +278,15 @@ def Main():
                                         work_shift.workerNames.append(worker) # adds worker to shift
                                         worker.NumberOfShifts+=1 # adds to worker's total number of shifts
 
+                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                    for TimeAvailable in worker.Times_Available: # runs through the availability of worker
+                        for work_shift in Shift_List: # runs through all avaialable shifts
+                            if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
+                                if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                    work_shift.workerNames.append(worker) # adds worker to shift
+                                    worker.NumberOfShifts+=1 # adds to worker's total number of shift
+           
+            # Reducing worker's shifts
             if worker.Hours_Wanted < worker.NumberOfShifts: # checks if worker has more shifts than requested
                 #print(worker.Name, " has more than their requested hours!")
                 for work_shift in Shift_List: # tries to remove worker's extra shifts
@@ -350,9 +306,67 @@ def Main():
 
             #if worker.Hours_Wanted == worker.NumberOfShifts: # checks if worker their has requested amount of hours
                 #print(worker.Name, " has their requested hours!")
+
+def CreateOutputFile (Shift_List,Consultant_List):
+  OutFileName="Schedule.csv"
+  with open (OutFileName, "w", encoding='utf-8') as OutFile:
+    Columns = ["Time", "Workers", "Number Of Workers"]
+    writer = csv.DictWriter(OutFile, fieldnames=Columns)
+    writer.writeheader()
+    for Shift in Shift_List:
+        TempNameList=[]
+        for name in Shift.workerNames:
+            TempNameList.append(name.Name)
+        writer.writerow({"Time": Shift.hour, "Workers": TempNameList, "Number Of Workers": len(TempNameList)})
+    OutFile.close()
+
+# Main Function
+def Main():
+
+    # Program set up
+    Consultant_List = CreateConsultantList()
+    #for i in ConsultantList: # prints list of consultants and attached info
+        #print(i.Name, i.Year, i.Hours_Wanted)
+        #print(i.Field_Of_Study, i.Times_Available)
+    Shift_List, Choices_List = CreateShiftInfo()
+    #for i in Shift_List: # prints list of available shifts
+        #print(i.hour, i.priority)
+    #for i in Choices_List: # prints director's choices
+       # print(i)
+
+    # Scheduler Program
+    Max_Workers = Choices_List[4]
+    Min_Workers = Choices_List[3]
+    for worker in Consultant_List: #Workers get distributed to available work times
+        for TimeAvailable in worker.Times_Available: # runs through the availability of worker
+            for work_shift in Shift_List: # runs through all avaialable shifts
+                if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
+                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                        work_shift.workerNames.append(worker) # adds worker to shift
+                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+
+    for Shift in (range(len(Shift_List))): #Tries to reduce workers in all shifts to under Shift_Maximum
+        ScheduleTrimmer(Shift_List,Shift,Max_Workers,True,Choices_List[0],Choices_List[1],Choices_List[2])
+
+    for Shift in range(len(Shift_List)): 
+        priority = 3 # priority scales from 1 to 3, with 3 being the least busy shifts and 1 the busiest
+        while (priority>1): # tries to reduce amount of workers in least busy and average shifts to Shift_Minimum
+            for Shift in (range(len(Shift_List))):
+                if Shift_List[Shift].priority == priority:
+                    ScheduleTrimmer(Shift_List,Shift,Min_Workers,True,Choices_List[0],Choices_List[1],Choices_List[2])
+            priority-=1
+        while (priority==1): # tries to reduce amount of workers in busiest shifts to under Shift_Maximum
+            for Shift in range(len(Shift_List)): #Tries to reduce shifts to under Shift_Maximum
+                ScheduleTrimmer(Shift_List,Shift,Max_Workers,True,Choices_List[0],Choices_List[1],Choices_List[2])
+            priority-=1
+
+    # Scheduler Checker - Adds and Removes hours from workers
+    count = 2
+    while count != 0:
+        Schedule_Checker (Consultant_List, Shift_List, Max_Workers, Min_Workers)
         count -= 1
 
-    for worker in ConsultantList:
+    for worker in Consultant_List:
         if worker.Hours_Wanted < worker.NumberOfShifts: # checks if worker has more shifts than requested
             Extra_Hours = worker.NumberOfShifts - worker.Hours_Wanted
             print(worker.Name, " has ", Extra_Hours, " more hours than requested!")
@@ -361,7 +375,7 @@ def Main():
             print(worker.Name, " has ", Needed_Hours, " hours less than requested!")
 
 
-    CreateOutputFile (Shift_List,ConsultantList) #Creates the "Schedule.csv" file
+    CreateOutputFile (Shift_List,Consultant_List) #Creates the "Schedule.csv" file
 
 
 
