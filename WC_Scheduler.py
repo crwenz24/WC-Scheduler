@@ -1,4 +1,5 @@
 # Import Libraries
+from concurrent.futures.thread import _worker
 import pandas as pd
 import csv
 
@@ -69,7 +70,7 @@ def CreateConsultantList():
     return ConsultantList
 
 def CreateShiftInfo():
-    # Shift consultant information
+    # Shift information
     for index, row in wc.iterrows():
         if (row['Multiple Shifts'].strip() == 'Yes'):
             Multiple_Shifts = True
@@ -125,6 +126,16 @@ def CreateShiftInfo():
         open_shifts = [o_sunday, o_monday, o_tuesday, o_wednesday, o_thursday, o_friday]
         busy_shifts = [b_sunday, b_monday, b_tuesday, b_wednesday, b_thursday, b_friday]
         quiet_shifts = [q_sunday, q_monday, q_tuesday, q_wednesday, q_thursday, q_friday]
+
+        for i in range(len(open_shifts)):
+            if not (isinstance(open_shifts[i], str)):
+                open_shifts[i] = 'Nothing'
+        for i in range(len(busy_shifts)):
+            if not (isinstance(busy_shifts[i], str)):
+                busy_shifts[i] = 'Nothing'
+        for i in range(len(quiet_shifts)):
+            if not (isinstance(quiet_shifts[i], str)):
+                quiet_shifts[i] = 'Nothing'
 
         for i in range(len(open_shifts)):
             open_shifts[i] = open_shifts[i].strip().split(",")
@@ -266,10 +277,9 @@ def Main():
         for TimeAvailable in worker.Times_Available: # runs through the availability of worker
             for work_shift in Shift_List: # runs through all avaialable shifts
                 if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
-                    if worker.NumberOfShifts < (worker.Hours_Wanted*2): # limits worker to only twice the number of shifts requested
-                        if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                            work_shift.workerNames.append(worker) # adds worker to shift
-                            worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                        work_shift.workerNames.append(worker) # adds worker to shift
+                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
 
     for Shift in (range(len(Shift_List))): #Tries to reduce shifts to under Shift_Maximum
         ScheduleTrimmer(Shift_List,Shift,Choices_List[4],True,Choices_List[0],Choices_List[1],Choices_List[2])
@@ -279,47 +289,76 @@ def Main():
         while (priority>1): # tries to reduce amount of workers in least busy and average shifts to Shift_Minimum
             for Shift in (range(len(Shift_List))):
                 if Shift_List[Shift].priority == priority:
-                    ScheduleTrimmer(Shift_List,Shift,Choices_List[3],True,Choices_List[0],Choices_List[1],Choices_List[2])
+                    ScheduleTrimmer(Shift_List,Shift,Min_Workers,True,Choices_List[0],Choices_List[1],Choices_List[2])
             priority-=1
         while (priority==1): # tries to reduce amount of workers in busiest shifts to under Shift_Maximum
             for Shift in range(len(Shift_List)): #Tries to reduce shifts to under Shift_Maximum
-                ScheduleTrimmer(Shift_List,Shift,Choices_List[4],True,Choices_List[0],Choices_List[1],Choices_List[2])
+                ScheduleTrimmer(Shift_List,Shift,Max_Workers,True,Choices_List[0],Choices_List[1],Choices_List[2])
             priority-=1
 
-    for worker in ConsultantList:
-        if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker has less shifts than requested
-            print(worker.Name, " has less than their requested hours!")
-            for TimeAvailable in worker.Times_Available: # runs through the availability of worker
-                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
-                    for work_shift in Shift_List: # runs through all avaialable shifts
-                        if (len(work_shift.workerNames)< Min_Workers): # looks for shifts that do not have the minimum workers
-                            if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                                work_shift.workerNames.append(worker) # adds worker to shift
-                                worker.NumberOfShifts+=1 # adds to worker's total number of shifts
-
-            if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+    count = 2
+    while count != 0:
+        for worker in ConsultantList:
+            if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker has less shifts than requested
+                #print(worker.Name, " has less than their requested hours!")
                 for TimeAvailable in worker.Times_Available: # runs through the availability of worker
-                    for work_shift in Shift_List: # runs through all avaialable shifts
-                        if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
-                            if (work_shift.priority == 3): # checks if shift is a busy shift
-                                if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                                    work_shift.workerNames.append(worker) # adds worker to shift
-                                    worker.NumberOfShifts+=1 # adds to worker's total number of shifts
-                            if (work_shift.priority == 2) and (len(work_shift.workerNames)<(Max_Workers-1)): # checks if shift is an average shift and that placing the worker in the shift doesn't make the shift full
+                    if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                        for work_shift in Shift_List: # runs through all avaialable shifts
+                            if (len(work_shift.workerNames)< Min_Workers): # looks for shifts that do not have the minimum workers
                                 if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
                                     work_shift.workerNames.append(worker) # adds worker to shift
                                     worker.NumberOfShifts+=1 # adds to worker's total number of shifts
 
+                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                    for TimeAvailable in worker.Times_Available: # runs through the availability of worker
+                        for work_shift in Shift_List: # runs through all avaialable shifts
+                            if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
+                                if (work_shift.priority == 1): # checks if shift is a busy shift
+                                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                        work_shift.workerNames.append(worker) # adds worker to shift
+                                        worker.NumberOfShifts+=1 # adds to worker's total number of shift
+
+                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                    for TimeAvailable in worker.Times_Available: # runs through the availability of worker
+                        for work_shift in Shift_List: # runs through all avaialable shifts
+                            if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
+                                if (work_shift.priority == 2) and (len(work_shift.workerNames)<(Max_Workers-1)): # checks if shift is an average shift and that adding the worker doesn't place too many people in an avverage shift
+                                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                        work_shift.workerNames.append(worker) # adds worker to shift
+                                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+                                if (work_shift.priority == 3) and (len(work_shift.workerNames)<(Max_Workers-2)): # checks if shift is an quiet shift and that adding the worker doesn't place too many people in a quiet shift
+                                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                        work_shift.workerNames.append(worker) # adds worker to shift
+                                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+
+            if worker.Hours_Wanted < worker.NumberOfShifts: # checks if worker has more shifts than requested
+                #print(worker.Name, " has more than their requested hours!")
+                for work_shift in Shift_List: # tries to remove worker's extra shifts
+                    if worker.Hours_Wanted < worker.NumberOfShifts: # checks worker still needs to be removed from shifts
+                        if worker in work_shift.workerNames: # checks if worker is in shift
+                            if (len(work_shift.workerNames)> Min_Workers): # checks that if removing the worker would put the shift below minimum shift requirements
+                                if (work_shift.priority == 3 or work_shift.priority == 2): # prioritizes quiet and average shifts
+                                    work_shift.workerNames.remove(worker) # removes worker from shift
+                                    worker.NumberOfShifts-=1 # reduces worker's number of shifts
+
+                for work_shift in Shift_List: # tries to remove worker's extra shifts
+                    if worker.Hours_Wanted < worker.NumberOfShifts: # checks worker still needs to be removed from shifts
+                        if worker in work_shift.workerNames: # checks if worker is in shift
+                            if (len(work_shift.workerNames)> Min_Workers): # checks that if removing the worker would put the shift below minimum shift requirements
+                                work_shift.workerNames.remove(worker) # removes worker from shift
+                                worker.NumberOfShifts-=1 # reduces worker's number of shifts
+
+            #if worker.Hours_Wanted == worker.NumberOfShifts: # checks if worker their has requested amount of hours
+                #print(worker.Name, " has their requested hours!")
+        count -= 1
+
+    for worker in ConsultantList:
         if worker.Hours_Wanted < worker.NumberOfShifts: # checks if worker has more shifts than requested
-            print(worker.Name, " has more than their requested hours!")
-            for work_shift in Shift_List: # tries to remove worker's extra shifts
-                if worker.Hours_Wanted < worker.NumberOfShifts: # checks worker still needs to be removed from shifts
-                    if worker in work_shift.workerNames: # checks if worker is in shift
-                        if (len(work_shift.workerNames)> Min_Workers): # checks that if removing the worker would put the shift below minimum shift requirements
-                            work_shift.workerNames.remove(worker) # removes worker from shift
-                            worker.NumberOfShifts-=1 # reduces worker's number of shifts
-        if worker.Hours_Wanted == worker.NumberOfShifts:
-            print(worker.Name, " has their requested hours!")
+            Extra_Hours = worker.NumberOfShifts - worker.Hours_Wanted
+            print(worker.Name, " has ", Extra_Hours, " more hours than requested!")
+        if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker has less shifts than requested
+            Needed_Hours = worker.NumberOfShifts - worker.Hours_Wanted
+            print(worker.Name, " has ", Needed_Hours, " hours less than requested!")
 
 
     CreateOutputFile (Shift_List,ConsultantList) #Creates the "Schedule.csv" file
