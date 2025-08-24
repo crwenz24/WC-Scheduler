@@ -252,39 +252,43 @@ def Schedule_Checker (Consultant_List, Shift_List, Max_Workers, Min_Workers):
                     if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
                         for work_shift in Shift_List: # runs through all avaialable shifts
                             if (len(work_shift.workerNames)< Min_Workers): # looks for shifts that do not have the minimum workers
-                                if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                                    work_shift.workerNames.append(worker) # adds worker to shift
-                                    worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+                                if worker not in work_shift.workerNames: # prevents worker from being assigned to the same shift twice
+                                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                        work_shift.workerNames.append(worker) # adds worker to shift
+                                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
 
                 if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
                     for TimeAvailable in worker.Times_Available: # runs through the availability of worker
                         for work_shift in Shift_List: # runs through all avaialable shifts
                             if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
                                 if (work_shift.priority == 1): # checks if shift is a busy shift
+                                    if worker not in work_shift.workerNames: # prevents worker from being assigned to the same shift twice
+                                        if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                            work_shift.workerNames.append(worker) # adds worker to shift
+                                            worker.NumberOfShifts+=1 # adds to worker's total number of shift
+
+                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                    for TimeAvailable in worker.Times_Available: # runs through the availability of worker
+                        for work_shift in Shift_List: # runs through all avaialable shifts
+                            if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
+                                if worker not in work_shift.workerNames: # prevents worker from being assigned to the same shift twice
+                                    if (work_shift.priority == 2) and (len(work_shift.workerNames)<(Max_Workers-1)): # checks if shift is an average shift and that adding the worker doesn't place too many people in an avverage shift
+                                        if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                            work_shift.workerNames.append(worker) # adds worker to shift
+                                            worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+                                    if (work_shift.priority == 3) and (len(work_shift.workerNames)<(Max_Workers-2)): # checks if shift is an quiet shift and that adding the worker doesn't place too many people in a quiet shift
+                                        if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
+                                            work_shift.workerNames.append(worker) # adds worker to shift
+                                            worker.NumberOfShifts+=1 # adds to worker's total number of shifts
+
+                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
+                    for TimeAvailable in worker.Times_Available: # runs through the availability of worker
+                        for work_shift in Shift_List: # runs through all avaialable shifts
+                            if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
+                                if worker not in work_shift.workerNames: # prevents worker from being assigned to the same shift twice
                                     if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
                                         work_shift.workerNames.append(worker) # adds worker to shift
                                         worker.NumberOfShifts+=1 # adds to worker's total number of shift
-
-                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
-                    for TimeAvailable in worker.Times_Available: # runs through the availability of worker
-                        for work_shift in Shift_List: # runs through all avaialable shifts
-                            if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
-                                if (work_shift.priority == 2) and (len(work_shift.workerNames)<(Max_Workers-1)): # checks if shift is an average shift and that adding the worker doesn't place too many people in an avverage shift
-                                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                                        work_shift.workerNames.append(worker) # adds worker to shift
-                                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
-                                if (work_shift.priority == 3) and (len(work_shift.workerNames)<(Max_Workers-2)): # checks if shift is an quiet shift and that adding the worker doesn't place too many people in a quiet shift
-                                    if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                                        work_shift.workerNames.append(worker) # adds worker to shift
-                                        worker.NumberOfShifts+=1 # adds to worker's total number of shifts
-
-                if worker.Hours_Wanted > worker.NumberOfShifts: # checks if worker still needs more shifts
-                    for TimeAvailable in worker.Times_Available: # runs through the availability of worker
-                        for work_shift in Shift_List: # runs through all avaialable shifts
-                            if (len(work_shift.workerNames)< Max_Workers): # checks that shift is not already full
-                                if TimeAvailable == work_shift.hour: # checks if worker's availability is the same as an open shift
-                                    work_shift.workerNames.append(worker) # adds worker to shift
-                                    worker.NumberOfShifts+=1 # adds to worker's total number of shift
            
             # Reducing worker's shifts
             if worker.Hours_Wanted < worker.NumberOfShifts: # checks if worker has more shifts than requested
